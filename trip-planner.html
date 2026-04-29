@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Trip Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0c0f1a;
+    --surface: #13172a;
+    --card: #1a1f38;
+    --accent: #f0a500;
+    --accent2: #e05a4e;
+    --text: #e8e6f0;
+    --muted: #6b7099;
+    --border: #252a45;
+    --green: #3ecf8e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Background stars */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.1) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.12) 0%, transparent 100%),
+      radial-gradient(2px 2px at 90% 50%, rgba(240,165,0,0.1) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 50px; animation: fadeDown 0.8s ease; }
+  header .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p { color: var(--muted); margin-top: 10px; font-size: 15px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 8px; margin-bottom: 30px; background: var(--surface); padding: 6px; border-radius: 14px; border: 1px solid var(--border); }
+  .tab-btn {
+    flex: 1; padding: 10px; border: none; background: transparent; color: var(--muted);
+    border-radius: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500; transition: all 0.25s;
+  }
+  .tab-btn.active { background: var(--card); color: var(--text); box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+  .tab-panel { display: none; animation: fadeUp 0.4s ease; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 20px;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: rgba(240,165,0,0.3); }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+  }
+  .card-title .icon { font-size: 1.2rem; }
+
+  /* Form Elements */
+  label { display: block; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 7px; text-transform: uppercase; }
+  input, select, textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240,165,0,0.1);
+  }
+  select option { background: var(--card); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .field { margin-bottom: 16px; }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #e09000);
+    color: #0c0f1a;
+    border: none; border-radius: 12px; padding: 13px 28px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.25s; letter-spacing: 0.3px;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(240,165,0,0.3); }
+  .btn-secondary {
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 12px; padding: 11px 20px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: rgba(224,90,78,0.1); color: var(--accent2);
+    border: 1px solid rgba(224,90,78,0.3); border-radius: 8px;
+    padding: 6px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-danger:hover { background: rgba(224,90,78,0.2); }
+
+  /* Day Plans */
+  .day-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .day-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    background: linear-gradient(90deg, rgba(240,165,0,0.05), transparent);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .day-header h3 { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; }
+  .day-header .day-meta { font-size: 12px; color: var(--muted); }
+  .day-content { padding: 16px 18px; }
+  .activity-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-time { font-size: 11px; color: var(--accent); font-weight: 600; min-width: 50px; margin-top: 2px; }
+  .activity-text { flex: 1; font-size: 14px; }
+  .activity-category { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Budget Tracker */
+  .budget-bar-bg { background: var(--border); border-radius: 99px; height: 8px; margin: 10px 0 4px; }
+  .budget-bar { height: 8px; border-radius: 99px; background: linear-gradient(90deg, var(--green), var(--accent)); transition: width 0.5s ease; }
+  .budget-stats { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .budget-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .budget-item:last-child { border-bottom: none; }
+  .expense-tag {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: 11px; font-weight: 500;
+    background: rgba(240,165,0,0.12); color: var(--accent);
+  }
+
+  /* Checklist */
+  .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 2px solid var(--border); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s; cursor: pointer;
+  }
+  .check-box.checked { background: var(--green); border-color: var(--green); }
+  .check-box.checked::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
+  .check-label { font-size: 14px; transition: all 0.2s; }
+  .check-label.done { text-decoration: line-through; color: var(--muted); }
+
+  /* Summary card */
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; text-align: center;
+  }
+  .stat-card .val { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; color: var(--accent); }
+  .stat-card .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+  /* Tag pills */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tag {
+    padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 500;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .tag.selected { background: rgba(240,165,0,0.12); border-color: var(--accent); color: var(--accent); }
+
+  /* Animations */
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .actions-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-header h4 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .empty { text-align: center; padding: 30px; color: var(--muted); font-size: 14px; }
+  .empty .emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+  input[type="range"] { padding: 0; height: 4px; accent-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="badge">✈ Your Journey Awaits</div>
+    <h1>Trip Planner</h1>
+    <p>Plan, budget, and organise your perfect adventure</p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('overview')">🗺 Overview</button>
+    <button class="tab-btn" onclick="switchTab('itinerary')">📅 Itinerary</button>
+    <button class="tab-btn" onclick="switchTab('budget')">💰 Budget</button>
+    <button class="tab-btn" onclick="switchTab('packing')">🎒 Packing</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div id="tab-overview" class="tab-panel active">
+    <div class="card">
+      <div class="card-title"><span class="icon">✈️</span> Trip Details</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Destination</label>
+          <input type="text" id="destination" placeholder="e.g. Paris, France" oninput="updateSummary()" />
+        </div>
+        <div class="field">
+          <label>Trip Name</label>
+          <input type="text" id="tripName" placeholder="e.g. Summer Escape 2026" oninput="updateSummary()" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Departure Date</label>
+          <input type="date" id="startDate" oninput="updateSummary()" />
+        </div>
+        <div class="field">
+          <label>Return Date</label>
+          <input type="date" id="endDate" oninput="updateSummary()" />
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Travellers</label>
+          <input type="number" id="travellers" min="1" value="2" oninput="updateSummary()" />
+        </div>
+        <div class="field">
+          <label>Travel Style</label>
+          <select id="travelStyle">
+            <option>Budget</option>
+            <option selected>Mid-range</option>
+            <option>Luxury</option>
+            <option>Backpacker</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Total Budget (₹)</label>
+          <input type="number" id="totalBudget" placeholder="50000" oninput="updateBudgetBar()" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🏷</span> Trip Vibes</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">What kind of trip is this?</p>
+      <div class="tags" id="vibesTags">
+        <span class="tag" onclick="toggleTag(this)">🏖 Beach</span>
+        <span class="tag" onclick="toggleTag(this)">🏔 Mountains</span>
+        <span class="tag" onclick="toggleTag(this)">🏛 Culture</span>
+        <span class="tag" onclick="toggleTag(this)">🍜 Food</span>
+        <span class="tag" onclick="toggleTag(this)">🎉 Party</span>
+        <span class="tag" onclick="toggleTag(this)">🧘 Wellness</span>
+        <span class="tag" onclick="toggleTag(this)">🏕 Adventure</span>
+        <span class="tag" onclick="toggleTag(this)">👨‍👩‍👧 Family</span>
+        <span class="tag" onclick="toggleTag(this)">💑 Romantic</span>
+        <span class="tag" onclick="toggleTag(this)">📸 Photography</span>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="card" id="summaryCard">
+      <div class="card-title"><span class="icon">📋</span> Trip Summary</div>
+      <div class="summary-grid">
+        <div class="stat-card"><div class="val" id="sumDays">—</div><div class="lbl">Days</div></div>
+        <div class="stat-card"><div class="val" id="sumTravellers">—</div><div class="lbl">Travellers</div></div>
+        <div class="stat-card"><div class="val" id="sumActivities">0</div><div class="lbl">Activities</div></div>
+      </div>
+      <div id="sumDestination" style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--accent);margin-bottom:6px;">Set your destination to begin</div>
+      <div id="sumDates" style="color:var(--muted);font-size:13px;"></div>
+    </div>
+  </div>
+
+  <!-- ITINERARY TAB -->
+  <div id="tab-itinerary" class="tab-panel">
+    <div class="card">
+      <div class="card-title"><span class="icon">➕</span> Add Activity</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Day</label>
+          <input type="number" id="actDay" min="1" value="1" placeholder="Day number" />
+        </div>
+        <div class="field">
+          <label>Time</label>
+          <input type="time" id="actTime" value="09:00" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Activity</label>
+        <input type="text" id="actName" placeholder="e.g. Visit Eiffel Tower, Breakfast at café..." />
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Category</label>
+          <select id="actCategory">
+            <option>🏛 Sightseeing</option>
+            <option>🍽 Food & Drink</option>
+            <option>🚌 Transport</option>
+            <option>🏨 Accommodation</option>
+            <option>🛍 Shopping</option>
+            <option>🎭 Entertainment</option>
+            <option>🏖 Beach/Nature</option>
+            <option>💪 Activity/Sport</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <input type="text" id="actNotes" placeholder="Optional notes..." />
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addActivity()">+ Add to Itinerary</button>
+    </div>
+
+    <div id="itineraryList"><div class="empty"><span class="emoji">🗓</span>No activities yet. Add your first one above!</div></div>
+  </div>
+
+  <!-- BUDGET TAB -->
+  <div id="tab-budget" class="tab-panel">
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> Budget Overview</div>
+      <div class="grid-2" style="margin-bottom:18px;">
+        <div>
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Total Budget</div>
+          <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--text);" id="budgetDisplay">₹0</div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Spent</div>
+          <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--accent2);" id="spentDisplay">₹0</div>
+        </div>
+      </div>
+      <div class="budget-bar-bg"><div class="budget-bar" id="budgetBarFill" style="width:0%"></div></div>
+      <div class="budget-stats"><span id="budgetPct">0% spent</span><span id="budgetLeft">₹0 remaining</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">➕</span> Add Expense</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Description</label>
+          <input type="text" id="expDesc" placeholder="e.g. Flight tickets" />
+        </div>
+        <div class="field">
+          <label>Amount (₹)</label>
+          <input type="number" id="expAmount" placeholder="0" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="expCategory">
+          <option>✈️ Flights</option>
+          <option>🏨 Accommodation</option>
+          <option>🍽 Food</option>
+          <option>🚌 Transport</option>
+          <option>🎭 Activities</option>
+          <option>🛍 Shopping</option>
+          <option>🏥 Health/Insurance</option>
+          <option>📦 Miscellaneous</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="addExpense()">+ Log Expense</button>
+    </div>
+
+    <div class="card">
+      <div class="section-header"><h4>Expenses</h4></div>
+      <div id="expenseList"><div class="empty"><span class="emoji">💸</span>No expenses logged yet.</div></div>
+    </div>
+  </div>
+
+  <!-- PACKING TAB -->
+  <div id="tab-packing" class="tab-panel">
+    <div class="card">
+      <div class="card-title"><span class="icon">➕</span> Add Item</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Item Name</label>
+          <input type="text" id="packItem" placeholder="e.g. Passport, Sunscreen..." />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="packCategory">
+            <option>📄 Documents</option>
+            <option>👕 Clothing</option>
+            <option>💊 Health</option>
+            <option>🔌 Electronics</option>
+            <option>🪥 Toiletries</option>
+            <option>📦 Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn-primary" onclick="addPackItem()">+ Add Item</button>
+        <button class="btn-secondary" onclick="addDefaults()">Load Essentials</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <h4>Packing List</h4>
+        <span id="packProgress" style="font-size:12px;color:var(--green);font-weight:600;">0/0 packed</span>
+      </div>
+      <div class="budget-bar-bg" style="margin-bottom:18px;"><div class="budget-bar" id="packBar" style="width:0%;background:linear-gradient(90deg,var(--green),var(--accent))"></div></div>
+      <div id="packingList"><div class="empty"><span class="emoji">🎒</span>Add items or load essentials!</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// State
+let activities = [];
+let expenses = [];
+let packingItems = [];
+
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'budget') updateBudgetDisplay();
+}
+
+// Tag toggle
+function toggleTag(el) { el.classList.toggle('selected'); }
+
+// Update summary
+function updateSummary() {
+  const dest = document.getElementById('destination').value;
+  const name = document.getElementById('tripName').value;
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+  const travellers = document.getElementById('travellers').value;
+
+  document.getElementById('sumDestination').textContent = dest ? (name ? `${name} → ${dest}` : dest) : 'Set your destination to begin';
+  document.getElementById('sumTravellers').textContent = travellers || '—';
+
+  if (start && end) {
+    const s = new Date(start), e = new Date(end);
+    const days = Math.max(0, Math.round((e - s) / 86400000)) + 1;
+    document.getElementById('sumDays').textContent = days;
+    document.getElementById('sumDates').textContent = `${s.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})} — ${e.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})}`;
+  }
+}
+
+// Activities
+function addActivity() {
+  const day = document.getElementById('actDay').value;
+  const time = document.getElementById('actTime').value;
+  const name = document.getElementById('actName').value.trim();
+  const cat = document.getElementById('actCategory').value;
+  const notes = document.getElementById('actNotes').value.trim();
+  if (!name) return alert('Please enter an activity name.');
+  activities.push({ day: parseInt(day), time, name, cat, notes, id: Date.now() });
+  activities.sort((a, b) => a.day - b.day || a.time.localeCompare(b.time));
+  document.getElementById('actName').value = '';
+  document.getElementById('actNotes').value = '';
+  renderItinerary();
+  document.getElementById('sumActivities').textContent = activities.length;
+}
+
+function renderItinerary() {
+  const list = document.getElementById('itineraryList');
+  if (!activities.length) { list.innerHTML = '<div class="empty"><span class="emoji">🗓</span>No activities yet. Add your first one above!</div>'; return; }
+  const byDay = {};
+  activities.forEach(a => { if (!byDay[a.day]) byDay[a.day] = []; byDay[a.day].push(a); });
+  list.innerHTML = Object.keys(byDay).sort((a,b)=>a-b).map(day => `
+    <div class="day-block">
+      <div class="day-header">
+        <h3>Day ${day}</h3>
+        <span class="day-meta">${byDay[day].length} activit${byDay[day].length===1?'y':'ies'}</span>
+      </div>
+      <div class="day-content">
+        ${byDay[day].map(a => `
+          <div class="activity-item">
+            <div class="activity-time">${a.time}</div>
+            <div>
+              <div class="activity-text">${a.name}</div>
+              <div class="activity-category">${a.cat}${a.notes ? ' · ' + a.notes : ''}</div>
+            </div>
+            <button class="btn-danger" onclick="removeActivity(${a.id})">✕</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function removeActivity(id) {
+  activities = activities.filter(a => a.id !== id);
+  renderItinerary();
+  document.getElementById('sumActivities').textContent = activities.length;
+}
+
+// Expenses
+function addExpense() {
+  const desc = document.getElementById('expDesc').value.trim();
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const cat = document.getElementById('expCategory').value;
+  if (!desc || isNaN(amount) || amount <= 0) return alert('Please enter description and valid amount.');
+  expenses.push({ desc, amount, cat, id: Date.now() });
+  document.getElementById('expDesc').value = '';
+  document.getElementById('expAmount').value = '';
+  updateBudgetDisplay();
+}
+
+function updateBudgetDisplay() {
+  const total = parseFloat(document.getElementById('totalBudget').value) || 0;
+  const spent = expenses.reduce((s, e) => s + e.amount, 0);
+  const remaining = total - spent;
+  const pct = total > 0 ? Math.min(100, (spent / total) * 100) : 0;
+
+  document.getElementById('budgetDisplay').textContent = `₹${total.toLocaleString('en-IN')}`;
+  document.getElementById('spentDisplay').textContent = `₹${spent.toLocaleString('en-IN')}`;
+  document.getElementById('budgetBarFill').style.width = pct + '%';
+  document.getElementById('budgetBarFill').style.background = pct > 85 ? 'linear-gradient(90deg,var(--accent2),#ff6b5b)' : 'linear-gradient(90deg,var(--green),var(--accent))';
+  document.getElementById('budgetPct').textContent = `${pct.toFixed(0)}% spent`;
+  document.getElementById('budgetLeft').textContent = `₹${Math.max(0, remaining).toLocaleString('en-IN')} remaining`;
+
+  const list = document.getElementById('expenseList');
+  if (!expenses.length) { list.innerHTML = '<div class="empty"><span class="emoji">💸</span>No expenses logged yet.</div>'; return; }
+  list.innerHTML = expenses.map(e => `
+    <div class="budget-item">
+      <div>
+        <div style="font-size:14px;">${e.desc}</div>
+        <span class="expense-tag">${e.cat}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-family:'Playfair Display',serif;font-weight:700;color:var(--accent2);">₹${e.amount.toLocaleString('en-IN')}</span>
+        <button class="btn-danger" onclick="removeExpense(${e.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateBudgetBar() { updateBudgetDisplay(); }
+
+function removeExpense(id) {
+  expenses = expenses.filter(e => e.id !== id);
+  updateBudgetDisplay();
+}
+
+// Packing
+function addPackItem() {
+  const name = document.getElementById('packItem').value.trim();
+  const cat = document.getElementById('packCategory').value;
+  if (!name) return;
+  packingItems.push({ name, cat, checked: false, id: Date.now() });
+  document.getElementById('packItem').value = '';
+  renderPacking();
+}
+
+const essentials = [
+  { name: 'Passport', cat: '📄 Documents' },
+  { name: 'Visa / Travel permits', cat: '📄 Documents' },
+  { name: 'Travel insurance', cat: '📄 Documents' },
+  { name: 'Flight tickets (printed)', cat: '📄 Documents' },
+  { name: 'T-shirts (x5)', cat: '👕 Clothing' },
+  { name: 'Comfortable walking shoes', cat: '👕 Clothing' },
+  { name: 'Sunglasses', cat: '👕 Clothing' },
+  { name: 'Light jacket', cat: '👕 Clothing' },
+  { name: 'Toothbrush & toothpaste', cat: '🪥 Toiletries' },
+  { name: 'Sunscreen SPF 50+', cat: '🪥 Toiletries' },
+  { name: 'Shampoo & conditioner', cat: '🪥 Toiletries' },
+  { name: 'Pain relievers', cat: '💊 Health' },
+  { name: 'Personal medications', cat: '💊 Health' },
+  { name: 'Phone charger', cat: '🔌 Electronics' },
+  { name: 'Power bank', cat: '🔌 Electronics' },
+  { name: 'Universal adapter', cat: '🔌 Electronics' },
+];
+
+function addDefaults() {
+  essentials.forEach(e => {
+    if (!packingItems.find(p => p.name === e.name)) {
+      packingItems.push({ ...e, checked: false, id: Date.now() + Math.random() });
+    }
+  });
+  renderPacking();
+}
+
+function togglePack(id) {
+  const item = packingItems.find(p => p.id === id);
+  if (item) item.checked = !item.checked;
+  renderPacking();
+}
+
+function removePackItem(id) {
+  packingItems = packingItems.filter(p => p.id !== id);
+  renderPacking();
+}
+
+function renderPacking() {
+  const list = document.getElementById('packingList');
+  const checked = packingItems.filter(p => p.checked).length;
+  const total = packingItems.length;
+  document.getElementById('packProgress').textContent = `${checked}/${total} packed`;
+  document.getElementById('packBar').style.width = total ? (checked / total * 100) + '%' : '0%';
+
+  if (!packingItems.length) { list.innerHTML = '<div class="empty"><span class="emoji">🎒</span>Add items or load essentials!</div>'; return; }
+
+  const bycat = {};
+  packingItems.forEach(p => { if (!bycat[p.cat]) bycat[p.cat] = []; bycat[p.cat].push(p); });
+
+  list.innerHTML = Object.entries(bycat).map(([cat, items]) => `
+    <div style="margin-bottom:18px;">
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px;">${cat}</div>
+      ${items.map(p => `
+        <div class="check-item">
+          <div class="check-box ${p.checked ? 'checked' : ''}" onclick="togglePack(${p.id})"></div>
+          <span class="check-label ${p.checked ? 'done' : ''}" onclick="togglePack(${p.id})">${p.name}</span>
+          <button class="btn-danger" onclick="removePackItem(${p.id})">✕</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// Init
+updateSummary();
+</script>
+</body>
+</html>
